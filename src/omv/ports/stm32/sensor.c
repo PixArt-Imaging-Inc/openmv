@@ -3,6 +3,7 @@
  *
  * Copyright (c) 2013-2021 Ibrahim Abdelkader <iabdalkader@openmv.io>
  * Copyright (c) 2013-2021 Kwabena W. Agyeman <kwagyeman@openmv.io>
+ * Copyright (c) 2021 Lake Fu <lake_fu@pixart.com>
  *
  * This work is licensed under the MIT license, see the file LICENSE for details.
  *
@@ -11,6 +12,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include "py/mphal.h"
 #include "irq.h"
 #include "cambus.h"
@@ -21,6 +23,7 @@
 #include "ov7670.h"
 #include "ov7690.h"
 #include "ov9650.h"
+#include "paj6100u6.h"
 #include "mt9v034.h"
 #include "mt9m114.h"
 #include "lepton.h"
@@ -45,6 +48,21 @@ static DCMI_HandleTypeDef DCMIHandle = {.Instance = DCMI};
 static MDMA_HandleTypeDef DCMI_MDMA_Handle0 = {.Instance = MDMA_Channel0};
 static MDMA_HandleTypeDef DCMI_MDMA_Handle1 = {.Instance = MDMA_Channel1};
 #endif
+
+/*
+ Move the declare of ISC SPI handle from Lepton driver
+ to here because it is not only for Lepton but also
+ used by other SPI sensors.
+ It might be a good idea to create a management module
+ (suck as the cambus for I2C), but it is no my major
+ task currently. @lake
+ */
+// ISC SPI
+SPI_HandleTypeDef ISC_SPIHandle;
+void ISC_SPI_IRQHandler(void)
+{
+    HAL_SPI_IRQHandler(&ISC_SPIHandle);
+}
 
 extern uint8_t _line_buf;
 
@@ -347,20 +365,35 @@ int sensor_init()
                 systick_sleep(10);
 
                 sensor.slv_addr = cambus_scan(&sensor.bus);
+#if OMV_ENABLE_NONI2CIS == 0
                 if (sensor.slv_addr == 0) {
                     return -2;
                 }
+#endif
             }
         }
     }
 
     // Clear sensor chip ID.
-    sensor.chip_id = 0;
+    sensor.chip_id_w = 0;
 
     // Set default snapshot function.
     sensor.snapshot = sensor_snapshot;
 
     switch (sensor.slv_addr) {
+        #if OMV_ENABLE_NONI2CIS == 1
+        case 0:
+            if (findPaj6100(&sensor))
+            {
+                // Found Pixart PAJ6100
+                sensor.chip_id_w = PAJ6100U6_ID;
+                sensor.pwdn_pol = ACTIVE_LOW;
+                sensor.reset_pol = ACTIVE_LOW;
+                break;
+            }
+            // Okay, there is not any sensor be detected.
+            return -2;
+        #endif
         #if (OMV_ENABLE_OV2640 == 1)
         case OV2640_SLV_ADDR: // Or OV9650.
             cambus_readb(&sensor.bus, sensor.slv_addr, OV_CHIP_ID, &sensor.chip_id);
@@ -414,7 +447,14 @@ int sensor_init()
             break;
     }
 
-    switch (sensor.chip_id) {
+    // Use the wide ID to pick the sensor.
+    switch (sensor.chip_id_w) {
+        case PAJ6100U6_ID:
+            if (extclk_config(PAJ6100U6_XCLK_FREQ) != 0) {
+                return -3;
+            }
+            init_ret = paj6100u6_init(&sensor);
+            break;
         #if (OMV_ENABLE_OV2640 == 1)
         case OV2640_ID:
             if (extclk_config(OV2640_XCLK_FREQ) != 0) {

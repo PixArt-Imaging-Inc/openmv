@@ -3,6 +3,7 @@
  *
  * Copyright (c) 2013-2021 Ibrahim Abdelkader <iabdalkader@openmv.io>
  * Copyright (c) 2013-2021 Kwabena W. Agyeman <kwagyeman@openmv.io>
+ * Copyright (c) 2021 Lake Fu <lake_fu@pixart.com>
  *
  * This work is licensed under the MIT license, see the file LICENSE for details.
  *
@@ -42,6 +43,11 @@
 #define LEPTON_ID           (0x54)
 #define HM01B0_ID           (0xB0)
 #define GC2145_ID           (0x21)
+// It should be 0x6100, but that will cause
+// sensor_get_id() to return 0x00 and then
+// OpenMV IDE will throw an error dialog.
+// So.. a workaround here.
+#define PAJ6100U6_ID        (0x61ff) // Wide ID
 
 typedef enum {
     FRAMESIZE_INVALID = 0,

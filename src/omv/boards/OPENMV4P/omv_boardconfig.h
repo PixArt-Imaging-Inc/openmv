@@ -65,6 +65,7 @@
 #define OMV_ENABLE_MT9V034      (1)
 #define OMV_ENABLE_LEPTON       (1)
 #define OMV_ENABLE_HM01B0       (0)
+#define OMV_ENABLE_NONI2CIS     (1) // Non-I2C image sensor.
 
 // Enable sensor features
 #define OMV_ENABLE_OV5640_AF    (0)
@@ -73,7 +74,7 @@
 #define OMV_ENABLE_WIFIDBG      (1)
 
 // Enable self-tests on first boot
-#define OMV_ENABLE_SELFTEST     (1)
+#define OMV_ENABLE_SELFTEST     (0)
 
 // If buffer size is bigger than this threshold, the quality is reduced.
 // This is only used for JPEG images sent to the IDE not normal compression.
@@ -155,7 +156,7 @@
 #define OMV_FB_SIZE             (20M)       // FB memory: header + VGA/GS image
 #define OMV_FB_ALLOC_SIZE       (11M)       // minimum fb alloc size
 #define OMV_STACK_SIZE          (64K)
-#define OMV_HEAP_SIZE           (240K)
+#define OMV_HEAP_SIZE           (239K)
 #define OMV_SDRAM_SIZE          (32 * 1024 * 1024) // This needs to be here for UVC firmware.
 
 #define OMV_LINE_BUF_SIZE       (11 * 1024) // Image line buffer round(2592 * 2BPP * 2 buffers).
@@ -329,40 +330,46 @@
 #define SOFT_I2C_SIOD_WRITE(bit)     HAL_GPIO_WritePin(SOFT_I2C_PORT, SOFT_I2C_SIOD_PIN, bit);
 
 #define SOFT_I2C_SPIN_DELAY         64
-
-#define LEPTON_SPI                  (SPI3)
-// SPI1/2/3 clock source is PLL3 (160MHz/8 == 20MHz) - Minimum (164*240*8*27 = 8,501,760Hz)
-#define LEPTON_SPI_PRESCALER        (SPI_BAUDRATEPRESCALER_8)
-
-#define LEPTON_SPI_IRQn             (SPI3_IRQn)
-#define LEPTON_SPI_IRQHandler       (SPI3_IRQHandler)
-
+/* Lepton */
 #define LEPTON_SPI_DMA_IRQn         (DMA1_Stream0_IRQn)
 #define LEPTON_SPI_DMA_STREAM       (DMA1_Stream0)
 
 #define LEPTON_SPI_DMA_REQUEST      (DMA_REQUEST_SPI3_RX)
 #define LEPTON_SPI_DMA_IRQHandler   (DMA1_Stream0_IRQHandler)
 
-#define LEPTON_SPI_RESET()          __HAL_RCC_SPI3_FORCE_RESET()
-#define LEPTON_SPI_RELEASE()        __HAL_RCC_SPI3_RELEASE_RESET()
+#define ISC_SPI                  (SPI3)
+// SPI1/2/3 clock source is PLL3 (160MHz/8 == 20MHz) - Minimum (164*240*8*27 = 8,501,760Hz)
+#define ISC_SPI_PRESCALER        (SPI_BAUDRATEPRESCALER_8)
 
-#define LEPTON_SPI_CLK_ENABLE()     __HAL_RCC_SPI3_CLK_ENABLE()
-#define LEPTON_SPI_CLK_DISABLE()    __HAL_RCC_SPI3_CLK_DISABLE()
+#define ISC_SPI_IRQn             (SPI3_IRQn)
+#define ISC_SPI_IRQHandler       (SPI3_IRQHandler)
 
-#define LEPTON_SPI_SCLK_AF          (GPIO_AF6_SPI3)
-#define LEPTON_SPI_MISO_AF          (GPIO_AF6_SPI3)
-#define LEPTON_SPI_MOSI_AF          (GPIO_AF7_SPI3)
-#define LEPTON_SPI_SSEL_AF          (GPIO_AF6_SPI3)
+#define ISC_SPI_DMA_IRQn         (DMA1_Stream0_IRQn)
+#define ISC_SPI_DMA_STREAM       (DMA1_Stream0)
 
-#define LEPTON_SPI_SCLK_PIN         (GPIO_PIN_3)
-#define LEPTON_SPI_MISO_PIN         (GPIO_PIN_4)
-#define LEPTON_SPI_MOSI_PIN         (GPIO_PIN_5)
-#define LEPTON_SPI_SSEL_PIN         (GPIO_PIN_15)
+#define ISC_SPI_DMA_REQUEST      (DMA_REQUEST_SPI3_RX)
+#define ISC_SPI_DMA_IRQHandler   (DMA1_Stream0_IRQHandler)
 
-#define LEPTON_SPI_SCLK_PORT        (GPIOB)
-#define LEPTON_SPI_MISO_PORT        (GPIOB)
-#define LEPTON_SPI_MOSI_PORT        (GPIOB)
-#define LEPTON_SPI_SSEL_PORT        (GPIOA)
+#define ISC_SPI_RESET()          __HAL_RCC_SPI3_FORCE_RESET()
+#define ISC_SPI_RELEASE()        __HAL_RCC_SPI3_RELEASE_RESET()
+
+#define ISC_SPI_CLK_ENABLE()     __HAL_RCC_SPI3_CLK_ENABLE()
+#define ISC_SPI_CLK_DISABLE()    __HAL_RCC_SPI3_CLK_DISABLE()
+
+#define ISC_SPI_SCLK_AF          (GPIO_AF6_SPI3)
+#define ISC_SPI_MISO_AF          (GPIO_AF6_SPI3)
+#define ISC_SPI_MOSI_AF          (GPIO_AF7_SPI3)
+#define ISC_SPI_SSEL_AF          (GPIO_AF6_SPI3)
+
+#define ISC_SPI_SCLK_PIN         (GPIO_PIN_3)
+#define ISC_SPI_MISO_PIN         (GPIO_PIN_4)
+#define ISC_SPI_MOSI_PIN         (GPIO_PIN_5)
+#define ISC_SPI_SSEL_PIN         (GPIO_PIN_15)
+
+#define ISC_SPI_SCLK_PORT        (GPIOB)
+#define ISC_SPI_MISO_PORT        (GPIOB)
+#define ISC_SPI_MOSI_PORT        (GPIOB)
+#define ISC_SPI_SSEL_PORT        (GPIOA)
 
 // QSPI flash configuration for the bootloader.
 #define QSPIF_SIZE_BITS             (25)        // 2**25 == 32MBytes.

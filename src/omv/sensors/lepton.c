@@ -3,6 +3,7 @@
  *
  * Copyright (c) 2013-2021 Ibrahim Abdelkader <iabdalkader@openmv.io>
  * Copyright (c) 2013-2021 Kwabena W. Agyeman <kwagyeman@openmv.io>
+ * Copyright (c) 2021 Lake Fu <lake_fu@pixart.com>
  *
  * This work is licensed under the MIT license, see the file LICENSE for details.
  *
@@ -52,7 +53,7 @@ static bool measurement_mode = false;
 static float min_temp = DEFAULT_MIN_TEMP;
 static float max_temp = DEFAULT_MAX_TEMP;
 
-static SPI_HandleTypeDef SPIHandle;
+extern SPI_HandleTypeDef ISC_SPIHandle;
 static DMA_HandleTypeDef DMAHandle;
 LEP_CAMERA_PORT_DESC_T   LEPHandle;
 extern uint8_t _line_buf[];
@@ -66,19 +67,14 @@ static volatile uint32_t vospi_seg = 1;
 static uint32_t vospi_packets = 60;
 static int lepton_reset(sensor_t *sensor, bool measurement_mode);
 
-void LEPTON_SPI_IRQHandler(void)
-{
-    HAL_SPI_IRQHandler(&SPIHandle);
-}
-
 void LEPTON_SPI_DMA_IRQHandler(void)
 {
-    HAL_DMA_IRQHandler(SPIHandle.hdmarx);
+    HAL_DMA_IRQHandler(ISC_SPIHandle.hdmarx);
 }
 
 static void lepton_sync()
 {
-    HAL_SPI_Abort(&SPIHandle);
+    HAL_SPI_Abort(&ISC_SPIHandle);
 
     // Disable DMA IRQ
     HAL_NVIC_DisableIRQ(LEPTON_SPI_DMA_IRQn);
@@ -91,7 +87,7 @@ static void lepton_sync()
     vospi_seg = VOSPI_FIRST_SEGMENT;
 
     HAL_NVIC_EnableIRQ(LEPTON_SPI_DMA_IRQn);
-    HAL_SPI_Receive_DMA(&SPIHandle, vospi_packet, VOSPI_PACKET_SIZE);
+    HAL_SPI_Receive_DMA(&ISC_SPIHandle, vospi_packet, VOSPI_PACKET_SIZE);
 }
 
 static uint16_t lepton_calc_crc(uint8_t *buf)
@@ -703,36 +699,36 @@ int lepton_init(sensor_t *sensor)
         return -1;
     }
 
-    memset(&SPIHandle, 0, sizeof(SPIHandle));
-    SPIHandle.Instance               = LEPTON_SPI;
-    SPIHandle.Init.NSS               = SPI_NSS_HARD_OUTPUT;
-    SPIHandle.Init.NSSPMode          = SPI_NSS_PULSE_DISABLE;
-    SPIHandle.Init.NSSPolarity       = SPI_NSS_POLARITY_LOW;
-    SPIHandle.Init.Mode              = SPI_MODE_MASTER;
-    SPIHandle.Init.TIMode            = SPI_TIMODE_DISABLE;
-    SPIHandle.Init.Direction         = SPI_DIRECTION_2LINES_RXONLY;
-    SPIHandle.Init.DataSize          = SPI_DATASIZE_8BIT;
-    SPIHandle.Init.FifoThreshold     = SPI_FIFO_THRESHOLD_04DATA;
-    SPIHandle.Init.FirstBit          = SPI_FIRSTBIT_MSB;
-    SPIHandle.Init.CLKPhase          = SPI_PHASE_2EDGE;
-    SPIHandle.Init.CLKPolarity       = SPI_POLARITY_HIGH;
-    SPIHandle.Init.BaudRatePrescaler = LEPTON_SPI_PRESCALER;
+    memset(&ISC_SPIHandle, 0, sizeof(ISC_SPIHandle));
+    ISC_SPIHandle.Instance               = ISC_SPI;
+    ISC_SPIHandle.Init.NSS               = SPI_NSS_HARD_OUTPUT;
+    ISC_SPIHandle.Init.NSSPMode          = SPI_NSS_PULSE_DISABLE;
+    ISC_SPIHandle.Init.NSSPolarity       = SPI_NSS_POLARITY_LOW;
+    ISC_SPIHandle.Init.Mode              = SPI_MODE_MASTER;
+    ISC_SPIHandle.Init.TIMode            = SPI_TIMODE_DISABLE;
+    ISC_SPIHandle.Init.Direction         = SPI_DIRECTION_2LINES_RXONLY;
+    ISC_SPIHandle.Init.DataSize          = SPI_DATASIZE_8BIT;
+    ISC_SPIHandle.Init.FifoThreshold     = SPI_FIFO_THRESHOLD_04DATA;
+    ISC_SPIHandle.Init.FirstBit          = SPI_FIRSTBIT_MSB;
+    ISC_SPIHandle.Init.CLKPhase          = SPI_PHASE_2EDGE;
+    ISC_SPIHandle.Init.CLKPolarity       = SPI_POLARITY_HIGH;
+    ISC_SPIHandle.Init.BaudRatePrescaler = ISC_SPI_PRESCALER;
     // Recommanded setting to avoid glitches
-    SPIHandle.Init.MasterKeepIOState = SPI_MASTER_KEEP_IO_STATE_ENABLE;
+    ISC_SPIHandle.Init.MasterKeepIOState = SPI_MASTER_KEEP_IO_STATE_ENABLE;
 
-    if (HAL_SPI_Init(&SPIHandle) != HAL_OK) {
-        LEPTON_SPI_RESET();
-        LEPTON_SPI_RELEASE();
-        LEPTON_SPI_CLK_DISABLE();
+    if (HAL_SPI_Init(&ISC_SPIHandle) != HAL_OK) {
+        ISC_SPI_RESET();
+        ISC_SPI_RELEASE();
+        ISC_SPI_CLK_DISABLE();
         return -1;
     }
 
     // Associate the initialized DMA handle to the the SPI handle
-    __HAL_LINKDMA(&SPIHandle, hdmarx, DMAHandle);
+    __HAL_LINKDMA(&ISC_SPIHandle, hdmarx, DMAHandle);
 
     // NVIC configuration for SPI transfer complete interrupt
-    NVIC_SetPriority(LEPTON_SPI_IRQn, IRQ_PRI_DCMI);
-    HAL_NVIC_EnableIRQ(LEPTON_SPI_IRQn);
+    NVIC_SetPriority(ISC_SPI_IRQn, IRQ_PRI_DCMI);
+    HAL_NVIC_EnableIRQ(ISC_SPI_IRQn);
 
     return 0;
 }
